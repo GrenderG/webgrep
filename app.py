@@ -4,8 +4,10 @@ from flask import Flask, redirect, request
 
 app = Flask(__name__)
 
+# Config params.
 BLOCK_SIZE = 1024
 LOG_DIR = '/var/log/'
+DEFAULT_LOG_LINES = 100000
 
 
 def qtail(file_path, search=None, lines=20):
@@ -54,7 +56,7 @@ def list_logs():
 def query():
     file_param = request.args.get('f', type=str)
     query_param = request.args.get('q', type=str)
-    max_lines_param = request.args.get('l', default=10000, type=int)
+    max_lines_param = request.args.get('l', default=DEFAULT_LOG_LINES, type=int)
 
     file_path = f'{LOG_DIR}{file_param}'
 
