@@ -2,12 +2,15 @@ import os
 
 from flask import Flask, redirect, request
 
-app = Flask(__name__)
+from config import Config
 
-# Config params.
-BLOCK_SIZE = 1024
-LOG_DIR = '/var/log/'
-DEFAULT_LOG_LINES = 100000
+app = Flask(__name__)
+if Config.BASIC_AUTH_USERNAME and Config.BASIC_AUTH_PASSWORD:
+    from flask_basicauth import BasicAuth
+    basic_auth = BasicAuth(app)
+    app.config['BASIC_AUTH_USERNAME'] = Config.BASIC_AUTH_USERNAME
+    app.config['BASIC_AUTH_PASSWORD'] = Config.BASIC_AUTH_PASSWORD
+    app.config['BASIC_AUTH_FORCE'] = True
 
 
 def qtail(file_path, search=None, lines=20):
@@ -20,15 +23,15 @@ def qtail(file_path, search=None, lines=20):
         block_number = -1
         blocks = []
         while lines_to_go > 0 and block_end_byte > 0:
-            if block_end_byte - BLOCK_SIZE > 0:
-                f.seek(block_number * BLOCK_SIZE, 2)
-                blocks.append(f.read(BLOCK_SIZE))
+            if block_end_byte - Config.BLOCK_SIZE > 0:
+                f.seek(block_number * Config.BLOCK_SIZE, 2)
+                blocks.append(f.read(Config.BLOCK_SIZE))
             else:
                 f.seek(0, 0)
                 blocks.append(f.read(block_end_byte))
             lines_found = blocks[-1].count(b'\n')
             lines_to_go -= lines_found
-            block_end_byte -= BLOCK_SIZE
+            block_end_byte -= Config.BLOCK_SIZE
             block_number -= 1
         all_read_text = b''.join(reversed(blocks))
 
@@ -48,7 +51,7 @@ def main():
 
 @app.route('/list_logs')
 def list_logs():
-    file_list = [f for f in os.listdir(LOG_DIR) if os.path.isfile(os.path.join(LOG_DIR, f))]
+    file_list = [f for f in os.listdir(Config.LOG_DIR) if os.path.isfile(os.path.join(Config.LOG_DIR, f))]
     return '\n'.join(file_list), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
@@ -56,9 +59,9 @@ def list_logs():
 def query():
     file_param = request.args.get('f', type=str)
     query_param = request.args.get('q', type=str)
-    max_lines_param = request.args.get('l', default=DEFAULT_LOG_LINES, type=int)
+    max_lines_param = request.args.get('l', default=Config.DEFAULT_LOG_LINES, type=int)
 
-    file_path = f'{LOG_DIR}{file_param}'
+    file_path = f'{Config.LOG_DIR}{file_param}'
 
     # Security checks.
     if not os.path.exists(file_path):
@@ -71,4 +74,4 @@ def query():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host=Config.BIND_IP, port=Config.BIND_PORT)
