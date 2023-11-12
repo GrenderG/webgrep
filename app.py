@@ -61,7 +61,7 @@ def query():
     query_param = request.args.get('q', type=str)
     max_lines_param = request.args.get('l', default=Config.DEFAULT_LOG_LINES, type=int)
 
-    file_path = f'{Config.LOG_DIR}{file_param}'
+    file_path = os.path.join(Config.LOG_DIR, file_param)
 
     # Security checks.
     if not os.path.exists(file_path):
