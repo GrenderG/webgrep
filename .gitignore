@@ -10,3 +10,6 @@ venv
 # Compiled libs
 **.pyd
 **.so
+
+# Config file
+config.py

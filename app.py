@@ -2,7 +2,12 @@ import os
 
 from flask import Flask, request, render_template
 
-from config import Config
+try:
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
+    from config import Config
+except ModuleNotFoundError:
+    print('\033[91m[ERROR] Please rename config.py.dist to config.py and edit it to your liking.\033[0m')
+    exit(1)
 
 app = Flask(__name__)
 if Config.BASIC_AUTH_USERNAME and Config.BASIC_AUTH_PASSWORD:
