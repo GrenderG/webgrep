@@ -61,7 +61,7 @@ def list_logs():
     file_list = [f for f in os.listdir(Config.LOG_DIR)
                  if os.path.isfile(os.path.join(Config.LOG_DIR, f)) and not any(
             f.endswith(ext) for ext in Config.IGNORE_FILE_EXTENSIONS)]
-    return '\n'.join(file_list), 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    return '\n'.join(sorted(file_list)), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
 @app.route('/query', methods=['GET'])
@@ -73,7 +73,7 @@ def query():
     file_path = os.path.join(Config.LOG_DIR, file_param)
 
     # Security checks.
-    if not os.path.exists(file_path):
+    if not os.path.exists(file_path) or any(file_path.endswith(ext) for ext in Config.IGNORE_FILE_EXTENSIONS):
         return 'Error 400: File not found, see /list_files for the list of file names.', 400
     if '..' in file_param or '/' in file_param or '\\' in file_param:
         return 'Error 400: Invalid filename.'
