@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, redirect, request
+from flask import Flask, request, render_template
 
 from config import Config
 
@@ -47,16 +47,16 @@ def qtail(file_path, search=None, lines=20):
 
 @app.route('/', methods=['GET'])
 def main():
-    return redirect('/list_logs')
+    return render_template('index.html', title='webgrep')
 
 
-@app.route('/list_logs', methods=['GET'])
+@app.route('/list_files', methods=['GET'])
 def list_logs():
     file_list = [f for f in os.listdir(Config.LOG_DIR) if os.path.isfile(os.path.join(Config.LOG_DIR, f))]
     return '\n'.join(file_list), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 
-@app.route('/logs', methods=['GET'])
+@app.route('/query', methods=['GET'])
 def query():
     file_param = request.args.get('f', type=str)
     query_param = request.args.get('q', type=str)
@@ -66,7 +66,7 @@ def query():
 
     # Security checks.
     if not os.path.exists(file_path):
-        return 'Error 400: Log file not found, see /list_logs for the list of file names.', 400
+        return 'Error 400: File not found, see /list_files for the list of file names.', 400
     if '..' in file_param or '/' in file_param or '\\' in file_param:
         return 'Error 400: Invalid filename.'
 

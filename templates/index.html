@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log Search</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #2b2b2b; /* Dark background color */
+    }
+    .container {
+        text-align: left;
+        background-color: #333; /* Darker container background color */
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        position: relative; /* To position the title relative to the container */
+    }
+    .title {
+        color: #fff; /* White text color */
+        font-size: 24px; /* Larger font size */
+        margin-bottom: 20px; /* Add some space between the title and other elements */
+        position: absolute; /* Position the title absolutely */
+        top: -40px; /* Move the title up */
+        left: 50%; /* Center the title horizontally */
+        transform: translateX(-50%); /* Adjust for centering */
+    }
+    label {
+        color: #ddd; /* Light text color */
+    }
+    input[type="text"], select, button {
+        margin: 5px;
+        padding: 8px;
+        border: none;
+        border-radius: 4px;
+        width: calc(100% - 20px); /* Adjusting for padding and margin */
+    }
+    input[type="text"], select {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    button {
+        margin-top: 10px; /* Increased margin at the top */
+        background-color: #4CAF50; /* Green */
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        width: 100%; /* Button occupies full width */
+    }
+    button:hover {
+        background-color: #45a049; /* Darker green on hover */
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="title">webgrep</div> <!-- Title -->
+    <label for="fileName">File Name:</label><br>
+    <select id="fileName"></select><br>
+    <label for="queryString">Query String:</label><br>
+    <input type="text" id="queryString"><br>
+    <label for="linesToSearch">Number of Lines to Search:</label><br>
+    <input type="text" id="linesToSearch" value="10000000" oninput="this.value = this.value.replace(/\D/g, '')"><br> <!-- Default lines value multiplied by 10 -->
+    <button onclick="searchLogs()">Search</button>
+</div>
+
+<script>
+    // Function to populate file names in the dropdown menu
+    function populateFileNames() {
+        fetch('/list_files')
+            .then(response => response.text())
+            .then(data => {
+                const fileNames = data.trim().split('\n');
+                const fileNameSelect = document.getElementById('fileName');
+                fileNameSelect.innerHTML = '';
+                fileNames.forEach(fileName => {
+                    const option = document.createElement('option');
+                    option.text = fileName;
+                    fileNameSelect.add(option);
+                });
+            })
+            .catch(error => console.error('Error fetching file names:', error));
+    }
+
+    // Function to handle search button click
+    function searchLogs() {
+        const fileName = document.getElementById('fileName').value;
+        const queryString = document.getElementById('queryString').value;
+        const linesToSearch = document.getElementById('linesToSearch').value;
+        const url = `/query?f=${fileName}&q=${queryString}&l=${linesToSearch}`;
+        window.open(url, '_blank');
+    }
+
+    // Populate file names on page load
+    document.addEventListener('DOMContentLoaded', populateFileNames);
+</script>
+
+</body>
+</html>
