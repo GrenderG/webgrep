@@ -14,22 +14,18 @@
         margin: 0;
         background-color: #2b2b2b; /* Dark background color */
     }
+    .title {
+        color: #fff; /* White text color */
+        font-size: 32px; /* Larger font size */
+        margin-bottom: 20px; /* Add some space between the title and other elements */
+    }
     .container {
         text-align: left;
         background-color: #333; /* Darker container background color */
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        position: relative; /* To position the title relative to the container */
-    }
-    .title {
-        color: #fff; /* White text color */
-        font-size: 24px; /* Larger font size */
-        margin-bottom: 20px; /* Add some space between the title and other elements */
-        position: absolute; /* Position the title absolutely */
-        top: -40px; /* Move the title up */
-        left: 50%; /* Center the title horizontally */
-        transform: translateX(-50%); /* Adjust for centering */
+        width: 400px; /* Fixed width */
     }
     label {
         color: #ddd; /* Light text color */
@@ -56,18 +52,37 @@
     button:hover {
         background-color: #45a049; /* Darker green on hover */
     }
+    .queryString {
+        width: calc(100% - 30px); /* Adjusting for padding and margin */
+        margin-right: 5px;
+    }
+    .hidden {
+        display: none;
+    }
+    .transparent-btn {
+        background-color: transparent; /* Transparent background */
+        border: 2px dashed #4CAF50; /* Dashed border */
+        color: #4CAF50; /* Green border color */
+    }
+    .transparent-btn:hover {
+        background-color: rgba(76, 175, 80, 0.1); /* Light green on hover */
+    }
 </style>
 </head>
 <body>
 
 <div class="container">
     <div class="title">webgrep</div> <!-- Title -->
+
     <label for="fileName">File Name:</label><br>
     <select id="fileName"></select><br>
-    <label for="queryString">Query String:</label><br>
-    <input type="text" id="queryString"><br>
+    <label for="queryString">Query String (case-sensitive):</label><br>
+    <div id="queryStringsContainer">
+        <input type="text" class="queryString" placeholder="Query String 1"><br> <!-- Default query string field -->
+    </div>
+    <button id="addQueryStringBtn" class="transparent-btn">Add Another Query String</button>
     <label for="linesToSearch">Number of Lines to Search:</label><br>
-    <input type="text" id="linesToSearch" value="10000000" oninput="this.value = this.value.replace(/\D/g, '')"><br> <!-- Default lines value multiplied by 10 -->
+    <input type="text" id="linesToSearch" value="10000000" oninput="this.value = this.value.replace(/\D/g, '')"><br>
     <button onclick="searchLogs()">Search</button>
 </div>
 
@@ -89,10 +104,37 @@
             .catch(error => console.error('Error fetching file names:', error));
     }
 
+    // Function to add another query string field
+    function addQueryStringField() {
+        const queryStringsContainer = document.getElementById('queryStringsContainer');
+        const numQueryStrings = queryStringsContainer.getElementsByClassName('queryString').length;
+        if (numQueryStrings < 5) { // Maximum 5 query string fields
+            const newQueryStringField = document.createElement('input');
+            newQueryStringField.type = 'text';
+            newQueryStringField.className = 'queryString';
+            newQueryStringField.placeholder = `Query String ${numQueryStrings + 1}`;
+            queryStringsContainer.appendChild(newQueryStringField);
+            queryStringsContainer.appendChild(document.createElement('br'));
+        }
+        if (numQueryStrings === 4) { // If all fields are added, hide the "Add" button
+            document.getElementById('addQueryStringBtn').classList.add('hidden');
+        }
+    }
+
     // Function to handle search button click
     function searchLogs() {
         const fileName = document.getElementById('fileName').value;
-        const queryString = document.getElementById('queryString').value;
+        let queryString = '';
+        const queryStringFields = document.getElementsByClassName('queryString');
+        for (let i = 0; i < queryStringFields.length; i++) {
+            const currentQueryString = queryStringFields[i].value.trim();
+            if (currentQueryString !== '') {
+                if (queryString !== '') {
+                    queryString += '|';
+                }
+                queryString += currentQueryString;
+            }
+        }
         const linesToSearch = document.getElementById('linesToSearch').value;
         const url = `/query?f=${fileName}&q=${queryString}&l=${linesToSearch}`;
         window.open(url, '_blank');
@@ -100,6 +142,9 @@
 
     // Populate file names on page load
     document.addEventListener('DOMContentLoaded', populateFileNames);
+
+    // Event listener for adding another query string field
+    document.getElementById('addQueryStringBtn').addEventListener('click', addQueryStringField);
 </script>
 
 </body>

@@ -36,10 +36,9 @@ def qtail(file_path, search=None, lines=20):
         all_read_text = b''.join(reversed(blocks))
 
         if search:
-            search_bytes = search.encode('utf-8')
             matched_lines = []
             for line in all_read_text.splitlines()[-total_lines_wanted:]:
-                if search_bytes in line:
+                if all(string.encode('utf-8') in line for string in search.split('|')):
                     matched_lines.append(line)
             return b'\n'.join(matched_lines)
         return b'\n'.join(all_read_text.splitlines()[-total_lines_wanted:])
