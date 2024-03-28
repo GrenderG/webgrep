@@ -10,11 +10,15 @@ except ModuleNotFoundError:
     exit(1)
 
 app = Flask(__name__)
-if Config.BASIC_AUTH_USERNAME and Config.BASIC_AUTH_PASSWORD:
+if Config.BASIC_AUTH_ENABLE:
     from flask_basicauth import BasicAuth
-    basic_auth = BasicAuth(app)
-    app.config['BASIC_AUTH_USERNAME'] = Config.BASIC_AUTH_USERNAME
-    app.config['BASIC_AUTH_PASSWORD'] = Config.BASIC_AUTH_PASSWORD
+
+    class MultiUserBasicAuth(BasicAuth):
+        # override
+        def check_credentials(self, username, password):
+            return username in Config.BASIC_AUTH_USERS and Config.BASIC_AUTH_USERS[username] == password
+
+    basic_auth = MultiUserBasicAuth(app)
     app.config['BASIC_AUTH_FORCE'] = True
 
 
