@@ -9,7 +9,10 @@ class Config:
     BIND_PORT = 5000
 
     # Basic auth.
-    BASIC_AUTH_USERNAME = None
-    BASIC_AUTH_PASSWORD = None
+    BASIC_AUTH_ENABLE = False
+    BASIC_AUTH_USERS = {
+        'user': 'password',
+        'user2': 'password2'
+    }
 
     IGNORE_FILE_EXTENSIONS = ['.pdf', '.zip', '.gz', '.xz', '.7z']
