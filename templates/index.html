@@ -82,7 +82,7 @@
     </div>
     <button id="addQueryStringBtn" class="transparent-btn">Add Another Query String</button>
     <label for="linesToSearch">Number of Lines to Search:</label><br>
-    <input type="text" id="linesToSearch" value="1000000" oninput="this.value = this.value.replace(/\D/g, '')"><br>
+    <input type="text" id="linesToSearch" value="{{ default_log_lines }}" oninput="this.value = this.value.replace(/\D/g, '')"><br>
     <button onclick="searchLogs()">Search</button>
 </div>
 

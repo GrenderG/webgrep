@@ -57,7 +57,7 @@ def qtail(file_path, search=None, lines=20):
 
 @app.route('/', methods=['GET'])
 def main():
-    return render_template('index.html', title='webgrep')
+    return render_template('index.html', default_log_lines=Config.DEFAULT_LOG_LINES, title='webgrep')
 
 
 @app.route('/list_files', methods=['GET'])
