@@ -27,7 +27,7 @@ def qtail(file_path, search=None, lines=20):
     try:
         max_memory = Config.MAX_MEMORY_ALLOCATION
     except AttributeError:
-        max_memory = 4 * 1024 * 1024 * 1024  # Default 4GB max memory usage
+        max_memory = 4 * 1024 * 1024 * 1024  # Default 4GB max memory usage.
     block_size = Config.BLOCK_SIZE
 
     with open(file_path, 'rb') as f:
@@ -35,10 +35,10 @@ def qtail(file_path, search=None, lines=20):
         file_size = f.tell()
         block_end_byte = file_size
         lines_to_go = lines
-        used_memory = 0
 
         # Store only needed matching lines.
         line_buffer = collections.deque(maxlen=lines)
+        line_buffer_memory = 0  # Track memory usage of line_buffer.
 
         while lines_to_go > 0 and block_end_byte > 0:
             # Read only up to the remaining file size.
@@ -46,11 +46,6 @@ def qtail(file_path, search=None, lines=20):
             f.seek(block_end_byte - read_size, os.SEEK_SET)
             block = f.read(read_size)
             block_end_byte -= read_size
-
-            used_memory += len(block)
-            # Stop reading if memory limit is hit.
-            if used_memory > max_memory:
-                break
 
             lines_found = block.count(b'\n')
             lines_to_go -= lines_found
@@ -61,18 +56,25 @@ def qtail(file_path, search=None, lines=20):
                     # Apply search filter: only keep lines that match all search strings.
                     search_strings = [s.encode('utf-8') for s in search.split('|')]
                     if all(s in line for s in search_strings):
+                        # Add the line if it matches the search.
                         if len(line_buffer) < lines:
                             line_buffer.appendleft(line)
+                            line_buffer_memory += len(line)  # Track memory used by this line.
                         else:
                             break
                 else:
-                    # No search, just store the line
+                    # No search, just store the line.
                     if len(line_buffer) < lines:
                         line_buffer.appendleft(line)
+                        line_buffer_memory += len(line)  # Track memory used by this line.
                     else:
                         break
 
-        # Return the lines collected (matching or all lines)
+            # Stop processing further if memory limit was exceeded.
+            if line_buffer_memory > max_memory:
+                break
+
+        # Return the lines collected (matching or all lines).
         return b'\n'.join(line_buffer)
 
 
