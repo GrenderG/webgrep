@@ -24,12 +24,10 @@ if Config.BASIC_AUTH_ENABLE:
 
 
 def qtail(file_path, search=None, lines=20):
-    # TODO: Hackfix for people that haven't updated their config file. Remove this ASAP as soon as a proper config
-    #  system is in place.
     try:
         max_memory = Config.MAX_MEMORY_ALLOCATION
     except AttributeError:
-        max_memory = 4 * 1024 * 1024 * 1024  # 4GB max memory usage.
+        max_memory = 4 * 1024 * 1024 * 1024  # Default 4GB max memory usage
     block_size = Config.BLOCK_SIZE
 
     with open(file_path, 'rb') as f:
@@ -39,7 +37,7 @@ def qtail(file_path, search=None, lines=20):
         lines_to_go = lines
         used_memory = 0
 
-        # Store only needed lines.
+        # Store only needed matching lines.
         line_buffer = collections.deque(maxlen=lines)
 
         while lines_to_go > 0 and block_end_byte > 0:
@@ -57,18 +55,24 @@ def qtail(file_path, search=None, lines=20):
             lines_found = block.count(b'\n')
             lines_to_go -= lines_found
 
-            # Prepend lines from this block.
+            # Process and apply the search filter to each line.
             for line in reversed(block.splitlines()):
-                if len(line_buffer) < lines:
-                    line_buffer.appendleft(line)
+                if search:
+                    # Apply search filter: only keep lines that match all search strings.
+                    search_strings = [s.encode('utf-8') for s in search.split('|')]
+                    if all(s in line for s in search_strings):
+                        if len(line_buffer) < lines:
+                            line_buffer.appendleft(line)
+                        else:
+                            break
                 else:
-                    break
+                    # No search, just store the line
+                    if len(line_buffer) < lines:
+                        line_buffer.appendleft(line)
+                    else:
+                        break
 
-        # Check if *all* encoded search strings are in the line.
-        if search:
-            search_strings = [s.encode('utf-8') for s in search.split('|')]
-            return b'\n'.join(line for line in line_buffer if all(s in line for s in search_strings))
-
+        # Return the lines collected (matching or all lines)
         return b'\n'.join(line_buffer)
 
 
