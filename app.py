@@ -24,10 +24,17 @@ if Config.BASIC_AUTH_ENABLE:
 
 
 def qtail(file_path, search=None, lines=20):
+    # TODO: Hackfix for people that haven't updated their config file. Remove this ASAP as soon as a proper config
+    #  system is in place.
     try:
         max_memory = Config.MAX_MEMORY_ALLOCATION
     except AttributeError:
         max_memory = 4 * 1024 * 1024 * 1024  # Default 4GB max memory usage.
+    try:
+        lines_hard_cap = Config.LINES_HARD_CAP
+    except AttributeError:
+        lines_hard_cap = 50000000  # 50 million lines.
+    # TODO: End of hackfix.
     block_size = Config.BLOCK_SIZE
 
     with open(file_path, 'rb') as f:
@@ -72,6 +79,10 @@ def qtail(file_path, search=None, lines=20):
 
             # Stop processing further if memory limit was exceeded.
             if line_buffer_memory > max_memory:
+                break
+
+            # If the number of lines read exceeds the hard cap, exit.
+            if lines - lines_to_go > lines_hard_cap:
                 break
 
         # Return the lines collected (matching or all lines).
