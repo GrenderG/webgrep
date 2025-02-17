@@ -23,6 +23,8 @@ if Config.BASIC_AUTH_ENABLE:
     app.config['BASIC_AUTH_FORCE'] = True
 
 
+# TODO: Extra line breaks are being added when a line is split in the middle due to block size limitations.
+#  Find a clean way to prevent these splits.
 def qtail(file_path, search=None, lines=20):
     # TODO: Hackfix for people that haven't updated their config file. Remove this ASAP as soon as a proper config
     #  system is in place.
