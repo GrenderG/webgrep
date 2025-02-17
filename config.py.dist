@@ -1,6 +1,7 @@
 class Config:
     # General config.
-    BLOCK_SIZE = 1024
+    BLOCK_SIZE = 4096  # 4KB block size.
+    MAX_MEMORY_ALLOCATION = 4 * 1024 * 1024 * 1024  # 4GB max memory usage.
     LOG_DIR = '/var/log/'
     DEFAULT_LOG_LINES = 1000000
 

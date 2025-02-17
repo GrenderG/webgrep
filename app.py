@@ -1,3 +1,4 @@
+import collections
 import os
 
 from flask import Flask, request, render_template
@@ -23,36 +24,52 @@ if Config.BASIC_AUTH_ENABLE:
 
 
 def qtail(file_path, search=None, lines=20):
+    # TODO: Hackfix for people that haven't updated their config file. Remove this ASAP as soon as a proper config
+    #  system is in place.
+    try:
+        max_memory = Config.MAX_MEMORY_ALLOCATION
+    except AttributeError:
+        max_memory = 4 * 1024 * 1024 * 1024  # 4GB max memory usage.
+    block_size = Config.BLOCK_SIZE
+
     with open(file_path, 'rb') as f:
-        total_lines_wanted = lines
+        f.seek(0, os.SEEK_END)
+        file_size = f.tell()
+        block_end_byte = file_size
+        lines_to_go = lines
+        used_memory = 0
 
-        f.seek(0, 2)
-        block_end_byte = f.tell()
-        lines_to_go = total_lines_wanted
-        block_number = -1
-        blocks = []
+        # Store only needed lines.
+        line_buffer = collections.deque(maxlen=lines)
+
         while lines_to_go > 0 and block_end_byte > 0:
-            if block_end_byte - Config.BLOCK_SIZE > 0:
-                f.seek(block_number * Config.BLOCK_SIZE, 2)
-                blocks.append(f.read(Config.BLOCK_SIZE))
-            else:
-                f.seek(0, 0)
-                blocks.append(f.read(block_end_byte))
-            lines_found = blocks[-1].count(b'\n')
-            lines_to_go -= lines_found
-            block_end_byte -= Config.BLOCK_SIZE
-            block_number -= 1
-        all_read_text = b''.join(reversed(blocks))
+            # Read only up to the remaining file size.
+            read_size = min(block_size, block_end_byte)
+            f.seek(block_end_byte - read_size, os.SEEK_SET)
+            block = f.read(read_size)
+            block_end_byte -= read_size
 
+            used_memory += len(block)
+            # Stop reading if memory limit is hit.
+            if used_memory > max_memory:
+                break
+
+            lines_found = block.count(b'\n')
+            lines_to_go -= lines_found
+
+            # Prepend lines from this block.
+            for line in reversed(block.splitlines()):
+                if len(line_buffer) < lines:
+                    line_buffer.appendleft(line)
+                else:
+                    break
+
+        # Check if *all* encoded search strings are in the line.
         if search:
-            search_strings = [string.encode('utf-8') for string in search.split('|')]
-            matched_lines = []
-            for line in all_read_text.splitlines()[-total_lines_wanted:]:
-                # Check if *all* encoded search strings are in the line.
-                if all(string in line for string in search_strings):
-                    matched_lines.append(line)
-            return b'\n'.join(matched_lines)
-        return b'\n'.join(all_read_text.splitlines()[-total_lines_wanted:])
+            search_strings = [s.encode('utf-8') for s in search.split('|')]
+            return b'\n'.join(line for line in line_buffer if all(s in line for s in search_strings))
+
+        return b'\n'.join(line_buffer)
 
 
 @app.route('/', methods=['GET'])
@@ -78,12 +95,20 @@ def query():
 
     # Security checks.
     if not os.path.exists(file_path) or any(file_path.endswith(ext) for ext in Config.IGNORE_FILE_EXTENSIONS):
-        return 'Error 400: File not found, see /list_files for the list of file names.', 400
+        return ('HTTP ERROR 400: File not found, see /list_files for the list of file names.', 400,
+                {'Content-Type': 'text/plain; charset=utf-8'})
     if '..' in file_param or '/' in file_param or '\\' in file_param:
-        return 'Error 400: Invalid filename.'
+        return 'HTTP ERROR 400: Invalid filename.', 400, {'Content-Type': 'text/plain; charset=utf-8'}
 
-    return (qtail(file_path, search=query_param, lines=max_lines_param), 200,
-            {'Content-Type': 'text/plain; charset=utf-8'})
+    try:
+        return (qtail(file_path, search=query_param, lines=max_lines_param), 200,
+                {'Content-Type': 'text/plain; charset=utf-8'})
+    except MemoryError:
+        return ('HTTP ERROR 500: Not enough memory to handle this request.', 500,
+                {'Content-Type': 'text/plain; charset=utf-8'})
+    except PermissionError:
+        return ('HTTP ERROR 500: Not enough permissions to view this file.', 500,
+                {'Content-Type': 'text/plain; charset=utf-8'})
 
 
 if __name__ == '__main__':
