@@ -27,7 +27,7 @@ if Config.BASIC_AUTH_ENABLE:
 #  Find a clean way to prevent these splits.
 def qtail(file_path, search=None, lines=20):
     # TODO: Hackfix for people that haven't updated their config file. Remove this ASAP as soon as a proper config
-    #  system in place.
+    #  system is in place.
     try:
         max_memory = Config.MAX_MEMORY_ALLOCATION
     except AttributeError:
