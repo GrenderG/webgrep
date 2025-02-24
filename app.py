@@ -1,5 +1,6 @@
 import collections
 import os
+import time
 
 from flask import Flask, request, render_template
 
@@ -33,11 +34,12 @@ def qtail(file_path, search=None, lines=20):
     except AttributeError:
         max_memory = 4 * 1024 * 1024 * 1024  # Default 4GB max memory usage.
     try:
-        lines_hard_cap = Config.LINES_HARD_CAP
+        processing_timeout = Config.PROCESSING_TIMEOUT
     except AttributeError:
-        lines_hard_cap = 50000000  # 50 million lines.
+        processing_timeout = 25  # 25 seconds.
     # TODO: End of hackfix.
     block_size = Config.BLOCK_SIZE
+    start_time = time.time()
 
     with open(file_path, 'rb') as f:
         f.seek(0, os.SEEK_END)
@@ -95,8 +97,8 @@ def qtail(file_path, search=None, lines=20):
             if line_buffer_memory > max_memory:
                 break
 
-            # If the number of lines read exceeds the hard cap, exit.
-            if lines - lines_to_go > lines_hard_cap:
+            # Stop processing further if processing time exceeded the limit.
+            if time.time() - start_time > processing_timeout:
                 break
 
         # If there is still an unprocessed remainder, apply the search filter before adding it.
