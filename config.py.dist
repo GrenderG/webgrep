@@ -4,7 +4,7 @@ class Config:
     MAX_MEMORY_ALLOCATION = 4 * 1024 * 1024 * 1024  # 4GB max memory usage.
     LOG_DIR = '/var/log/'
     DEFAULT_LOG_LINES = 1000000
-    PROCESSING_TIMEOUT = 25  # Maximum processing time in seconds.
+    PROCESSING_TIMEOUT = 50  # Maximum processing time in seconds.
 
     # Embedded webserver config.
     BIND_IP = 'localhost'

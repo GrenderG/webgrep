@@ -36,7 +36,7 @@ def qtail(file_path, search=None, lines=20):
     try:
         processing_timeout = Config.PROCESSING_TIMEOUT
     except AttributeError:
-        processing_timeout = 25  # 25 seconds.
+        processing_timeout = 50  # 50 seconds.
     # TODO: End of hackfix.
     block_size = Config.BLOCK_SIZE
     start_time = time.time()
